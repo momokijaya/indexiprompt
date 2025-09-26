@@ -87,11 +87,13 @@
     <div id="app">
         <div class="relative z-10 container mx-auto px-1 sm:px-6 lg:px-8 py-8 md:py-12">
             
-            <!-- Search Bar -->
-            <div id="search-bar-container"></div>
-            
-            <!-- Sort Buttons -->
-            <div id="sort-buttons-container" class="flex justify-center gap-4 mb-8"></div>
+            <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                <!-- Search Bar -->
+                <div id="search-bar-container" class="flex-grow"></div>
+                
+                <!-- Sort Dropdown -->
+                <div id="sort-dropdown-container" class="relative flex-shrink-0"></div>
+            </div>
 
             <!-- Category Filters -->
             <div id="category-filters-container" class="flex flex-wrap justify-center gap-3 mb-16"></div>
@@ -179,8 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const uiStrings = {
-        id: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Cari prompt favorit Anda...", copyBtn: "Salin Prompt", copyToast: "Prompt berhasil disalin!", allCategory: "Semua", favoritesCategory: "Favorit", noResultsTitle: "Tidak ada hasil", noResultsText: "Coba kata kunci yang berbeda", sortTrending: "Trending", sortLatest: "Terbaru" },
-        en: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Search your perfect prompt...", copyBtn: "Copy Prompt", copyToast: "Prompt copied successfully!", allCategory: "All", favoritesCategory: "Favorites", noResultsTitle: "No results found", noResultsText: "Try different keywords", sortTrending: "Trending", sortLatest: "Latest" }
+        id: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Cari prompt favorit Anda...", copyBtn: "Salin Prompt", copyToast: "Prompt berhasil disalin!", allCategory: "Semua", favoritesCategory: "Favorit", noResultsTitle: "Tidak ada hasil", noResultsText: "Coba kata kunci yang berbeda", sortTrending: "Trending", sortLatest: "Terbaru", sortRandom: "Acak" },
+        en: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Search your perfect prompt...", copyBtn: "Copy Prompt", copyToast: "Prompt copied successfully!", allCategory: "All", favoritesCategory: "Favorites", noResultsTitle: "No results found", noResultsText: "Try different keywords", sortTrending: "Trending", sortLatest: "Latest", sortRandom: "Random" }
     };
 
     const ITEMS_PER_PAGE = 12;
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         favoriteIds: [],
         searchTerm: '',
         activeCategory: '',
-        sortBy: 'latest', // 'latest' or 'trending'
+        sortBy: 'latest', // 'latest', 'trending', or 'random'
         toastMessage: '',
         isToastVisible: false,
         currentPage: 1,
@@ -202,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
     const root = document.getElementById('app');
     const searchBarContainer = document.getElementById('search-bar-container');
-    const sortButtonsContainer = document.getElementById('sort-buttons-container');
+    const sortDropdownContainer = document.getElementById('sort-dropdown-container');
     const categoryFiltersContainer = document.getElementById('category-filters-container');
     const promptGridContainer = document.getElementById('prompt-grid-container');
     const paginationContainer = document.getElementById('pagination-container');
@@ -302,6 +304,11 @@ document.addEventListener('DOMContentLoaded', () => {
             filtered.sort((a, b) => new Date(b.date_added) - new Date(a.date_added));
         } else if (state.sortBy === 'trending') {
             filtered.sort((a, b) => b.popularity - a.popularity);
+        } else if (state.sortBy === 'random') {
+            for (let i = filtered.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+            }
         }
         
         return filtered;
@@ -381,17 +388,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderSearchBar(strings) {
         searchBarContainer.innerHTML = `
-            <div class="mb-8 max-w-full mx-auto">
-                <div class="relative group">
-                    <div class="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-slate-600/10 dark:from-sky-500/20 dark:to-slate-600/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-                    <div class="relative bg-white/80 dark:bg-gradient-to-r dark:from-slate-900/95 dark:to-slate-800/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl p-1">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-slate-500 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
-                            </div>
-                            <input id="search-input" type="search" value="${state.searchTerm}" placeholder="${strings.searchPlaceholder}" class="block w-full pl-11 pr-4 py-3 bg-transparent text-black dark:text-white text-base placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-0 rounded-lg" />
-                        </div>
+             <div class="relative bg-white/80 dark:bg-gradient-to-r dark:from-slate-900/95 dark:to-slate-800/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl p-1">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-500 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                     </div>
+                    <input id="search-input" type="search" value="${state.searchTerm}" placeholder="${strings.searchPlaceholder}" class="block w-full pl-11 pr-4 py-3 bg-transparent text-black dark:text-white text-base placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-0 rounded-lg" />
                 </div>
             </div>`;
         document.getElementById('search-input').oninput = (e) => {
@@ -401,26 +403,45 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
-    function renderSortButtons(strings) {
-        const latestClass = state.sortBy === 'latest' ? 'bg-sky-500 text-white' : 'text-slate-400 bg-slate-800 hover:bg-slate-700';
-        const trendingClass = state.sortBy === 'trending' ? 'bg-sky-500 text-white' : 'text-slate-400 bg-slate-800 hover:bg-slate-700';
-
-        sortButtonsContainer.innerHTML = `
-            <button id="sort-latest-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 ${latestClass}">${strings.sortLatest}</button>
-            <button id="sort-trending-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 ${trendingClass}">${strings.sortTrending}</button>
-        `;
-
-        document.getElementById('sort-latest-btn').onclick = () => {
-            state.sortBy = 'latest';
-            saveState('sortBy', 'latest');
-            renderMainContent();
-            renderSortButtons(strings);
+    function renderSortDropdown(strings) {
+        const sortOptions = {
+            latest: strings.sortLatest,
+            trending: strings.sortTrending,
+            random: strings.sortRandom,
         };
-        document.getElementById('sort-trending-btn').onclick = () => {
-            state.sortBy = 'trending';
-            saveState('sortBy', 'trending');
-            renderMainContent();
-            renderSortButtons(strings);
+        
+        sortDropdownContainer.innerHTML = `
+            <button id="sort-dropdown-btn" class="w-full sm:w-auto flex items-center justify-between text-left px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300">
+                <span>Sort: ${sortOptions[state.sortBy]}</span>
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="sort-dropdown-menu" class="absolute mt-2 w-full sm:w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-lg z-50 hidden">
+                <a href="#" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700" data-sort="latest">${strings.sortLatest}</a>
+                <a href="#" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700" data-sort="trending">${strings.sortTrending}</a>
+                <a href="#" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700" data-sort="random">${strings.sortRandom}</a>
+            </div>
+        `;
+        
+        const btn = document.getElementById('sort-dropdown-btn');
+        const menu = document.getElementById('sort-dropdown-menu');
+
+        btn.onclick = () => menu.classList.toggle('hidden');
+        
+        document.querySelectorAll('#sort-dropdown-menu a').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                state.sortBy = e.target.dataset.sort;
+                saveState('sortBy', state.sortBy);
+                menu.classList.add('hidden');
+                updateUI();
+            };
+        });
+        
+        // Hide dropdown if clicked outside
+        window.onclick = (event) => {
+            if (!event.target.matches('#sort-dropdown-btn, #sort-dropdown-btn *')) {
+                menu.classList.add('hidden');
+            }
         };
     }
 
@@ -791,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderHeader(strings);
         renderSearchBar(strings);
-        renderSortButtons(strings);
+        renderSortDropdown(strings);
         renderCategoryFilters(strings);
         renderMainContent();
     }
