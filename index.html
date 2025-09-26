@@ -89,6 +89,9 @@
             
             <!-- Search Bar -->
             <div id="search-bar-container"></div>
+            
+            <!-- Sort Buttons -->
+            <div id="sort-buttons-container" class="flex justify-center gap-4 mb-8"></div>
 
             <!-- Category Filters -->
             <div id="category-filters-container" class="flex flex-wrap justify-center gap-3 mb-16"></div>
@@ -121,7 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "tags_id": ["fashion", "setelan jas", "modern", "minimalis", "cahaya natural"],
             "tags_en": ["fashion", "suit", "modern", "minimalist", "natural light"],
             "category_id": "Foto & Potret",
-            "category_en": "Photo & Portrait"
+            "category_en": "Photo & Portrait",
+            "popularity": 85,
+            "date_added": "2025-09-26"
         },
         {
             "id": 2,
@@ -131,7 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "tags_id": ["potret", "galeri seni", "hitam putih", "kontemplatif", "gerak kabur"],
             "tags_en": ["portrait", "art gallery", "black and white", "pensive", "motion blur"],
             "category_id": "Foto & Potret",
-            "category_en": "Photo & Portrait"
+            "category_en": "Photo & Portrait",
+            "popularity": 95,
+            "date_added": "2025-09-25"
         },
         {
             "id": 3,
@@ -141,7 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "tags_id": ["potret", "kecantikan", "minimalis", "high-key", "studio"],
             "tags_en": ["portrait", "beauty", "minimalist", "high-key", "studio"],
             "category_id": "Foto & Potret",
-            "category_en": "Photo & Portrait"
+            "category_en": "Photo & Portrait",
+            "popularity": 92,
+            "date_added": "2025-09-24"
         },
         {
             "id": 4,
@@ -151,7 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "tags_id": ["3d", "karakter", "imut", "render", "game"],
             "tags_en": ["3d", "character", "cute", "render", "game"],
             "category_id": "Game & Karakter",
-            "category_en": "Game & Character"
+            "category_en": "Game & Character",
+            "popularity": 78,
+            "date_added": "2025-09-23"
         },
         {
             "id": 5,
@@ -161,13 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
             "tags_id": ["potret", "mawar merah", "sorotan", "dramatis", "elegan"],
             "tags_en": ["portrait", "red rose", "spotlight", "dramatic", "elegant"],
             "category_id": "Foto & Potret",
-            "category_en": "Photo & Portrait"
+            "category_en": "Photo & Portrait",
+            "popularity": 98,
+            "date_added": "2025-09-27"
         }
     ];
 
     const uiStrings = {
-        id: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Cari prompt favorit Anda...", copyBtn: "Salin Prompt", copyToast: "Prompt berhasil disalin!", allCategory: "Semua", favoritesCategory: "Favorit", noResultsTitle: "Tidak ada hasil", noResultsText: "Coba kata kunci yang berbeda" },
-        en: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Search your perfect prompt...", copyBtn: "Copy Prompt", copyToast: "Prompt copied successfully!", allCategory: "All", favoritesCategory: "Favorites", noResultsTitle: "No results found", noResultsText: "Try different keywords" }
+        id: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Cari prompt favorit Anda...", copyBtn: "Salin Prompt", copyToast: "Prompt berhasil disalin!", allCategory: "Semua", favoritesCategory: "Favorit", noResultsTitle: "Tidak ada hasil", noResultsText: "Coba kata kunci yang berbeda", sortTrending: "Trending", sortLatest: "Terbaru" },
+        en: { pageTitle: "INDEXIPROMPT", headerTitle: "INDEXIPROMPT", headerSubtitle: "DEVELOPED BY APINAKEW", searchPlaceholder: "Search your perfect prompt...", copyBtn: "Copy Prompt", copyToast: "Prompt copied successfully!", allCategory: "All", favoritesCategory: "Favorites", noResultsTitle: "No results found", noResultsText: "Try different keywords", sortTrending: "Trending", sortLatest: "Latest" }
     };
 
     const ITEMS_PER_PAGE = 12;
@@ -178,16 +191,18 @@ document.addEventListener('DOMContentLoaded', () => {
         favoriteIds: [],
         searchTerm: '',
         activeCategory: '',
+        sortBy: 'latest', // 'latest' or 'trending'
         toastMessage: '',
         isToastVisible: false,
         currentPage: 1,
         selectedPrompt: null,
-        viewMode: 'thumbnail' // Default to thumbnail/grid view
+        viewMode: 'thumbnail'
     };
 
     // --- DOM ELEMENT REFERENCES ---
     const root = document.getElementById('app');
     const searchBarContainer = document.getElementById('search-bar-container');
+    const sortButtonsContainer = document.getElementById('sort-buttons-container');
     const categoryFiltersContainer = document.getElementById('category-filters-container');
     const promptGridContainer = document.getElementById('prompt-grid-container');
     const paginationContainer = document.getElementById('pagination-container');
@@ -204,6 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const storedViewMode = localStorage.getItem('viewMode');
         state.viewMode = storedViewMode ? JSON.parse(storedViewMode) : 'thumbnail';
+        
+        const storedSortBy = localStorage.getItem('sortBy');
+        state.sortBy = storedSortBy ? JSON.parse(storedSortBy) : 'latest';
 
         state.activeCategory = uiStrings[state.language].allCategory;
     }
@@ -268,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const lowerCaseSearchTerm = state.searchTerm.toLowerCase();
-        return promptsForCategory.filter(p => {
+        let filtered = promptsForCategory.filter(p => {
             const matchesSearch = lowerCaseSearchTerm ? (
                 p.prompt_id.toLowerCase().includes(lowerCaseSearchTerm) ||
                 p.prompt_en.toLowerCase().includes(lowerCaseSearchTerm) ||
@@ -278,6 +296,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return matchesSearch;
         });
+
+        // Sorting Logic
+        if (state.sortBy === 'latest') {
+            filtered.sort((a, b) => new Date(b.date_added) - new Date(a.date_added));
+        } else if (state.sortBy === 'trending') {
+            filtered.sort((a, b) => b.popularity - a.popularity);
+        }
+        
+        return filtered;
     }
 
     // --- RENDER FUNCTIONS ---
@@ -371,6 +398,29 @@ document.addEventListener('DOMContentLoaded', () => {
             state.searchTerm = e.target.value;
             state.currentPage = 1;
             renderMainContent();
+        };
+    }
+    
+    function renderSortButtons(strings) {
+        const latestClass = state.sortBy === 'latest' ? 'bg-sky-500 text-white' : 'text-slate-400 bg-slate-800 hover:bg-slate-700';
+        const trendingClass = state.sortBy === 'trending' ? 'bg-sky-500 text-white' : 'text-slate-400 bg-slate-800 hover:bg-slate-700';
+
+        sortButtonsContainer.innerHTML = `
+            <button id="sort-latest-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 ${latestClass}">${strings.sortLatest}</button>
+            <button id="sort-trending-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 ${trendingClass}">${strings.sortTrending}</button>
+        `;
+
+        document.getElementById('sort-latest-btn').onclick = () => {
+            state.sortBy = 'latest';
+            saveState('sortBy', 'latest');
+            renderMainContent();
+            renderSortButtons(strings);
+        };
+        document.getElementById('sort-trending-btn').onclick = () => {
+            state.sortBy = 'trending';
+            saveState('sortBy', 'trending');
+            renderMainContent();
+            renderSortButtons(strings);
         };
     }
 
@@ -741,6 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderHeader(strings);
         renderSearchBar(strings);
+        renderSortButtons(strings);
         renderCategoryFilters(strings);
         renderMainContent();
     }
