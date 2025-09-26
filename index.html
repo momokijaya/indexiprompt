@@ -87,16 +87,16 @@
     <div id="app">
         <div class="relative z-10 container mx-auto px-1 sm:px-6 lg:px-8 py-8 md:py-12">
             
-            <div class="flex flex-col sm:flex-row gap-4 mb-8">
-                <!-- Search Bar -->
-                <div id="search-bar-container" class="flex-grow"></div>
-                
+            <!-- Search Bar -->
+            <div id="search-bar-container" class="mb-8"></div>
+            
+            <!-- Filters & Sort Wrapper -->
+            <div class="flex flex-wrap items-center justify-center sm:justify-between gap-4 mb-16">
+                <!-- Category Filters -->
+                <div id="category-filters-container" class="flex flex-wrap justify-center gap-3"></div>
                 <!-- Sort Dropdown -->
-                <div id="sort-dropdown-container" class="relative flex-shrink-0"></div>
+                <div id="sort-dropdown-container" class="relative"></div>
             </div>
-
-            <!-- Category Filters -->
-            <div id="category-filters-container" class="flex flex-wrap justify-center gap-3 mb-16"></div>
             
             <!-- Prompt Grid -->
             <main id="prompt-grid-container" class="grid"></main>
